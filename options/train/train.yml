@@ -1,0 +1,79 @@
+name: ECCNet
+model_type: ClassificationModel
+scale: 1
+num_gpu: 1
+manual_seed:
+
+datasets:
+  train: 
+    name: NewData_Train
+    type: ClassificationImageDataset
+    dataroot:
+    phase: train
+    geometric_augs:
+    finetune_augment:
+    io_backend:
+      type: disk
+    use_shuffle: true
+    num_worker_per_gpu:
+    batch_size_per_gpu:
+    dataset_enlarge_ratio:
+    prefetch_mode: ~
+
+  val:
+    name: NewData_Val
+    type: ClassificationImageDataset
+    dataroot:
+    phase: val
+    io_backend:
+      type: disk
+    use_shuffle:
+    num_worker_per_gpu:
+    batch_size_per_gpu:
+
+
+network_g:
+  type: ECCNet
+  img_channel: 1
+  width: 18
+  enc_blk_nums: [1, 1, 1, 2]
+  num_classes: 5
+  GCE_CONVS_nums: [2, 2, 2, 2]
+
+# path
+path:
+  pretrain_network_g: 
+  strict_load_g: true
+  resume_state:
+
+train:
+  total_iter: 100000
+  scheduler:
+    type: CosineAnnealingRestartCyclicLR
+    periods: [22000, 78000]
+    restart_weights: [1, 1]
+    eta_mins: [0.0003, 0.000001]
+    eta_maxs: [0.0005, 0.0001]
+
+  optim_g:
+    type: AdamW
+    lr: !!float 5e-4
+    weight_decay: 0.0
+    betas: [0.9, 0.999]
+
+val:
+  val_freq: !!float 1
+  save_img: false
+  max_minibatch: 8
+
+logger:
+  print_freq: 200
+  save_checkpoint_freq: !!float 5e3
+  use_tb_logger: true
+  wandb:
+    project: ~
+    resume_id: ~
+
+dist_params:
+  backend: nccl
+  port: 29500
